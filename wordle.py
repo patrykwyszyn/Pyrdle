@@ -5,6 +5,7 @@ import pygame
 
 from typing import List, Dict
 from constants import Constants
+from models.game_result import GameResult
 from models.indicator import Indicator
 from models.letter import Letter
 from models.color import Color
@@ -36,8 +37,7 @@ class Wordle:
         self.indicators = []
         self.guesses = [[]] * 6
         self.guesses_count: int = 0
-        self.game_result = ""
-        self.game_decided = False
+        self.game_result = GameResult.NOT_DECIDED
         self.current_guess = []
         self.current_guess_string = ""
         self.current_letter_bg_x = self.starting_offset_for_letter
@@ -94,7 +94,7 @@ class Wordle:
         self.guesses: List[List[Letter]] = [[]] * 6
         self.current_guess = []
         self.current_guess_string = ""
-        self.game_result = ""
+        self.game_result = GameResult.NOT_DECIDED
         Ui.force_display_update()
         for indicator in self.indicators:
             indicator.bg_color = Color.OUTLINE
@@ -118,11 +118,11 @@ class Wordle:
         self.current_letter_bg_x -= Constants.LETTER_X_SPACING
 
     @staticmethod
-    def get_guess_frequency(guess_to_check: List[Letter]) -> Dict[str, int]:
+    def get_frequency_of_letters_in_guess_word(guess_to_check: List[Letter]) -> Dict[str, int]:
         letters = [x.character for x in guess_to_check]
         return collections.Counter(letters)
 
-    def get_correct_word_frequency(self):
+    def get_frequency_of_letters_in_correct_word(self):
         return collections.Counter(self.word.upper())
 
     def update_indicator(self, letter: str, color: Color):
@@ -152,40 +152,35 @@ class Wordle:
             guess_letters.append(LetterInWord(guess_to_check[i], i))
         return guess_letters
 
-    def check_guess(self, guess_to_check: List[Letter]):
-        word_counter = self.get_correct_word_frequency()
-        guess_counter = self.get_guess_frequency(guess_to_check)
-        guess_letters: List[LetterInWord] = self.get_letters_with_position(guess_to_check)
-
-        self.game_decided = False
+    def check_guess(self, guess_word: List[Letter]):
+        frequency_of_letters_in_correct_word = self.get_frequency_of_letters_in_correct_word()
+        frequency_of_letters_in_guess_word = self.get_frequency_of_letters_in_guess_word(guess_word)
+        guess_letters: List[LetterInWord] = self.get_letters_with_position(guess_word)
 
         for guess_letter in guess_letters.copy():
             if guess_letter.letter.character.lower() == self.word[guess_letter.index]:
                 self.update_letter(guess_letter.letter, Color.GREEN)
-                if not self.game_decided:
-                    self.game_result = "W"
+                self.game_result = GameResult.WIN
 
                 guess_letters.remove(guess_letter)
-                word_counter[guess_letter.letter.character] -= 1
-                guess_counter[guess_letter.letter.character] -= 1
+                frequency_of_letters_in_correct_word[guess_letter.letter.character] -= 1
+                frequency_of_letters_in_guess_word[guess_letter.letter.character] -= 1
 
         for guess_letter in guess_letters.copy():
-            if guess_letter.letter.character.lower() in self.word and word_counter[guess_letter.letter.character] > 0:
+            if guess_letter.letter.character.lower() in self.word and frequency_of_letters_in_correct_word[guess_letter.letter.character] > 0:
                 self.update_letter(guess_letter.letter, Color.YELLOW)
-                self.game_decided = True
-                self.game_result = ""
+                self.game_result = GameResult.NOT_DECIDED
 
-                word_counter[guess_letter.letter.character] -= 1
-                guess_counter[guess_letter.letter.character] -= 1
+                frequency_of_letters_in_correct_word[guess_letter.letter.character] -= 1
+                frequency_of_letters_in_guess_word[guess_letter.letter.character] -= 1
                 guess_letters.remove(guess_letter)
 
         for guess_letter in guess_letters:
             self.update_letter(guess_letter.letter, Color.GREY)
-            self.game_decided = True
-            self.game_result = ""
+            self.game_result = GameResult.NOT_DECIDED
 
-        if self.guesses_count == 5 and self.game_result == "":
-            self.game_result = "L"
+        if self.guesses_count == 5 and self.game_result == GameResult.NOT_DECIDED:
+            self.game_result = GameResult.LOSE
         self.prepare_for_the_next_guess()
 
     def play_again(self):
@@ -199,7 +194,7 @@ class Wordle:
 
     def play(self):
         while True:
-            if self.game_result != "":
+            if self.game_result != GameResult.NOT_DECIDED:
                 self.play_again()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -207,7 +202,7 @@ class Wordle:
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
-                        if self.game_result != "":
+                        if self.game_result != GameResult.NOT_DECIDED:
                             self.reset()
                         else:
                             if len(self.current_guess_string) == self.number_of_letters and self.current_guess_string.lower() in self.words:
