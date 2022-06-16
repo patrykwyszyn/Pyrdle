@@ -6,6 +6,7 @@ INDICATOR_HEIGHT = 75
 TEXT_X_OFFSET = 28
 TEXT_Y_OFFSET = 38
 
+
 class Indicator:
     def __init__(self, x, y, letter):
         self.x = x

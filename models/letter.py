@@ -1,8 +1,5 @@
-import pygame
-
 from UI.ui import Ui
 from constants import Constants
-from models.color import Color
 
 
 class Letter:
