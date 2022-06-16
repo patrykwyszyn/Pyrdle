@@ -1,4 +1,4 @@
 from wordle import Wordle
 
-wordle = Wordle("polish")
+wordle = Wordle()
 wordle.play()
