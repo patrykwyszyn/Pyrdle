@@ -2,7 +2,6 @@ import pygame
 
 from pygame.rect import Rect, RectType
 from pygame.surface import Surface, SurfaceType
-from typing import Union
 from constants import Constants
 from models.color import Color
 
@@ -20,9 +19,9 @@ PLAY_AGAIN_FONT = pygame.font.Font("resources/FreeSansBold.otf", 40)
 
 
 class Ui:
-    _screen: Union[Surface, SurfaceType]
-    _background: Union[Surface, SurfaceType]
-    _background_rect: Union[Rect, RectType, None]
+    _screen: Surface | SurfaceType
+    _background: Surface | SurfaceType
+    _background_rect: Rect | RectType | None
     
     @classmethod
     def __init__(cls, window_height, background_path):
