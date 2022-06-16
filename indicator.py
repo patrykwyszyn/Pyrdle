@@ -17,7 +17,7 @@ class Indicator:
 
     def draw(self):
         pygame.draw.rect(self.screen, self.bg_color, self.rect)
-        self.text_surface = self.available_letter_font.render(self.text, True, "white")
-        self.text_rect = self.text_surface.get_rect(center=(self.x+27, self.y+30))
-        self.screen.blit(self.text_surface, self.text_rect)
+        text_surface = self.available_letter_font.render(self.text, True, "white")
+        text_rect = text_surface.get_rect(center=(self.x+27, self.y+30))
+        self.screen.blit(text_surface, text_rect)
         pygame.display.update()
