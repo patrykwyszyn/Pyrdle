@@ -1,23 +1,16 @@
 import collections
 import random
 import sys
-from typing import List
-
 import pygame
 
+from typing import List
 from constants import Constants
 from indicator import Indicator
 from letter import Letter
 from models.color import Color
 from file_reader import FileReader
 from models.mode import Mode
-
-pygame.init()
-
-ICON = pygame.image.load(Constants.ICON_PATH)
-
-GUESSED_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 50)
-AVAILABLE_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 25)
+from UI.ui import Ui
 
 BASIC_INDICATORS: List[str] = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
 
@@ -34,16 +27,9 @@ class Wordle:
         self.file_reader = FileReader(chosen_language)
 
         background_path = self.set_mode_configuration(chosen_mode)
+        window_height: int = Constants.HEIGHT if self.file_reader.language_specific_letters == "" else Constants.HEIGHT_EXT
 
-        self.BACKGROUND = pygame.image.load(background_path)
-        self.BACKGROUND_RECT = self.BACKGROUND.get_rect(center=(318, 323))
-        window_height: int = Constants.HEIGHT if self.file_reader.language_specific_letters == "" else Constants.HEIGHT+100
-        self.SCREEN = pygame.display.set_mode((Constants.WIDTH, window_height))
-        self.SCREEN.fill("white")
-        self.SCREEN.blit(self.BACKGROUND, self.BACKGROUND_RECT)
-        pygame.display.set_caption(Constants.WINDOW_TITLE)
-        pygame.display.set_icon(ICON)
-        pygame.display.update()
+        Ui(window_height, background_path)
 
         self.draw_new_word()
         self.indicators = []
@@ -63,7 +49,6 @@ class Wordle:
         if chosen_mode == Mode.EASY:
             self.starting_offset_for_letter = Constants.EASY_MODE_OFFSET
             self.number_of_letters = Constants.EASY_MODE_LETTERS
-
             return Constants.EASY_MODE_BACKGROUND_PATH
         elif chosen_mode == Mode.MEDIUM:
             self.starting_offset_for_letter = Constants.MEDIUM_MODE_OFFSET
@@ -77,28 +62,23 @@ class Wordle:
     def update_configuration(self, chosen_mode):
         background_path = self.set_mode_configuration(chosen_mode)
         self.current_letter_bg_x = self.starting_offset_for_letter
-        self.BACKGROUND = pygame.image.load(background_path)
-        self.BACKGROUND_RECT = self.BACKGROUND.get_rect(center=(318, 323))
+        Ui.update_background(background_path)
 
     def initialize_keyboard(self):
         indicator_position_y = Constants.FIRST_INDICATOR_POSITION_Y
         for i in range(3):
             x_offset = (Constants.WIDTH - len(BASIC_INDICATORS[i]) * 60)/2
             for letter in BASIC_INDICATORS[i]:
-                new_indicator = Indicator(x_offset, indicator_position_y, letter, self.SCREEN)
+                new_indicator = Indicator(x_offset, indicator_position_y, letter)
                 self.indicators.append(new_indicator)
-                new_indicator.draw()
                 x_offset += 60
             indicator_position_y += 100
 
         x_offset = (Constants.WIDTH - len(self.file_reader.language_specific_letters) * 60)/2
         for letter in self.file_reader.language_specific_letters:
-            new_indicator = Indicator(x_offset, indicator_position_y, letter, self.SCREEN)
+            new_indicator = Indicator(x_offset, indicator_position_y, letter)
             self.indicators.append(new_indicator)
-            new_indicator.draw()
             x_offset += 60
-
-        # maybe add logic to center each indicator
 
     def draw_new_word(self):
         self.word = random.choice(self.words)
@@ -107,27 +87,26 @@ class Wordle:
             return self.draw_new_word()
         return
 
-    def valid_word(self, word: str):
+    def is_valid_word(self, word: str):
         return word in self.words
 
     def reset(self):
-        self.SCREEN.fill("white")
         self.update_configuration(Mode.MEDIUM)  # just checkin if changing mode after game works (it did)
-        self.SCREEN.blit(self.BACKGROUND, self.BACKGROUND_RECT)
+        Ui.reset_ui()
         self.guesses_count = 0
         self.draw_new_word()
         self.guesses: List[List[Letter]] = [[]] * 6
         self.current_guess = []
         self.current_guess_string = ""
         self.game_result = ""
-        pygame.display.update()
+        Ui.force_display_update()
         for indicator in self.indicators:
             indicator.bg_color = Color.OUTLINE
             indicator.draw()
 
     def create_new_letter(self, key_pressed):
         self.current_guess_string += key_pressed
-        new_letter = Letter(key_pressed, (self.current_letter_bg_x, self.guesses_count * 100 + Constants.LETTER_X_SPACING - 50), self.SCREEN)
+        new_letter = Letter(key_pressed, (self.current_letter_bg_x, self.guesses_count * 100 + Constants.LETTER_X_SPACING - 50))
         self.current_letter_bg_x += Constants.LETTER_X_SPACING
         self.guesses[self.guesses_count].append(new_letter)
         self.current_guess.append(new_letter)
@@ -145,7 +124,7 @@ class Wordle:
     def check_guess(self, guess_to_check):
         self.game_decided = False
         for i in range(self.number_of_letters):
-            lowercase_letter = guess_to_check[i].text.lower()
+            lowercase_letter = guess_to_check[i].character.lower()
             if lowercase_letter in self.word:
                 if lowercase_letter == self.word[i]:
                     guess_to_check[i].bg_color = Color.GREEN
@@ -175,7 +154,7 @@ class Wordle:
                 self.game_result = ""
                 self.game_decided = True
             guess_to_check[i].draw()
-            pygame.display.update()
+            Ui.force_display_update()
 
         self.guesses_count += 1
         self.current_guess = []
@@ -186,16 +165,13 @@ class Wordle:
             self.game_result = "L"
 
     def play_again(self):
+        frame_x = 10
+        frame_y = 600
+        frame_width = 1000
+        frame_height = 600
 
-        pygame.draw.rect(self.SCREEN, "white", (10, 600, 1000, 600))
-        play_again_font = pygame.font.Font("resources/FreeSansBold.otf", 40)
-        play_again_text = play_again_font.render("Press ENTER to Play Again!", True, "black")
-        play_again_rect = play_again_text.get_rect(center=(Constants.WIDTH / 2, 700))
-        word_was_text = play_again_font.render(f"The word was {self.word}!", True, "black")
-        word_was_rect = word_was_text.get_rect(center=(Constants.WIDTH / 2, 650))
-        self.SCREEN.blit(word_was_text, word_was_rect)
-        self.SCREEN.blit(play_again_text, play_again_rect)
-        pygame.display.update()
+        frame_rect = (frame_x, frame_y, frame_width, frame_height)
+        Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.word}!")
 
     def play(self):
         while True:
