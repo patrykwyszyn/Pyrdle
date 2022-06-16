@@ -58,20 +58,20 @@ class Wordle:
 
     def set_mode_configuration(self, chosen_mode: str):
         if chosen_mode == "EASY":
-            self.starting_offset_for_letter = Constants.HARD_MODE_OFFSET
-            self.number_of_letters = Constants.HARD_MODE_LETTERS
-            self.words = self.file_reader.hard_mode_words
-            return Constants.HARD_MODE_BACKGROUND_PATH
+            self.starting_offset_for_letter = Constants.EASY_MODE_OFFSET
+            self.number_of_letters = Constants.EASY_MODE_LETTERS
+            self.words = self.file_reader.easy_mode_words
+            return Constants.EASY_MODE_BACKGROUND_PATH
         elif chosen_mode == "MEDIUM":
             self.starting_offset_for_letter = Constants.MEDIUM_MODE_OFFSET
             self.number_of_letters = Constants.MEDIUM_MODE_LETTERS
             self.words = self.file_reader.medium_mode_words
             return Constants.MEDIUM_MODE_BACKGROUND_PATH
         else:
-            self.starting_offset_for_letter = Constants.EASY_MODE_OFFSET
-            self.number_of_letters = Constants.EASY_MODE_LETTERS
-            self.words = self.file_reader.easy_mode_words
-            return Constants.EASY_MODE_BACKGROUND_PATH
+            self.starting_offset_for_letter = Constants.HARD_MODE_OFFSET
+            self.number_of_letters = Constants.HARD_MODE_LETTERS
+            self.words = self.file_reader.hard_mode_words
+            return Constants.HARD_MODE_BACKGROUND_PATH
 
     def update_configuration(self, chosen_mode):
         background_path = self.set_mode_configuration(chosen_mode)
