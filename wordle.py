@@ -45,7 +45,6 @@ class Wordle:
 
     def set_mode_configuration(self, chosen_mode: Mode):
         self.words = self.file_reader.get_words(chosen_mode)
-        print(self.words)
         if chosen_mode == Mode.EASY:
             self.starting_offset_for_letter = Constants.EASY_MODE_OFFSET
             self.number_of_letters = Constants.EASY_MODE_LETTERS
