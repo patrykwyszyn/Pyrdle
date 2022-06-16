@@ -10,6 +10,7 @@ from indicator import Indicator
 from letter import Letter
 from models.color import Color
 from file_reader import FileReader
+from models.mode import Mode
 
 pygame.init()
 
@@ -17,6 +18,8 @@ ICON = pygame.image.load(Constants.ICON_PATH)
 
 GUESSED_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 50)
 AVAILABLE_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 25)
+
+BASIC_INDICATORS: List[str] = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
 
 
 class Wordle:
@@ -27,14 +30,15 @@ class Wordle:
     number_of_letters: int
     words: List[str]
 
-    def __init__(self, chosen_mode="EASY", chosen_language="english"):
+    def __init__(self, chosen_language="english", chosen_mode: Mode = Mode.EASY):
         self.file_reader = FileReader(chosen_language)
 
         background_path = self.set_mode_configuration(chosen_mode)
 
         self.BACKGROUND = pygame.image.load(background_path)
         self.BACKGROUND_RECT = self.BACKGROUND.get_rect(center=(318, 323))
-        self.SCREEN = pygame.display.set_mode((Constants.WIDTH, Constants.HEIGHT))
+        window_height: int = Constants.HEIGHT if self.file_reader.language_specific_letters == "" else Constants.HEIGHT+100
+        self.SCREEN = pygame.display.set_mode((Constants.WIDTH, window_height))
         self.SCREEN.fill("white")
         self.SCREEN.blit(self.BACKGROUND, self.BACKGROUND_RECT)
         pygame.display.set_caption(Constants.WINDOW_TITLE)
@@ -50,27 +54,24 @@ class Wordle:
         self.current_guess = []
         self.current_guess_string = ""
         self.current_letter_bg_x = self.starting_offset_for_letter
-        self.indicator_x = 20
-        self.indicator_y = 630
-        self.alphabet = self.file_reader.get_alphabet_in_parts() if self.file_reader else []
 
         self.initialize_keyboard()
 
-    def set_mode_configuration(self, chosen_mode: str):
-        if chosen_mode == "EASY":
+    def set_mode_configuration(self, chosen_mode: Mode):
+        self.words = self.file_reader.get_words(chosen_mode)
+        print(self.words)
+        if chosen_mode == Mode.EASY:
             self.starting_offset_for_letter = Constants.EASY_MODE_OFFSET
             self.number_of_letters = Constants.EASY_MODE_LETTERS
-            self.words = self.file_reader.easy_mode_words
+
             return Constants.EASY_MODE_BACKGROUND_PATH
-        elif chosen_mode == "MEDIUM":
+        elif chosen_mode == Mode.MEDIUM:
             self.starting_offset_for_letter = Constants.MEDIUM_MODE_OFFSET
             self.number_of_letters = Constants.MEDIUM_MODE_LETTERS
-            self.words = self.file_reader.medium_mode_words
             return Constants.MEDIUM_MODE_BACKGROUND_PATH
         else:
             self.starting_offset_for_letter = Constants.HARD_MODE_OFFSET
             self.number_of_letters = Constants.HARD_MODE_LETTERS
-            self.words = self.file_reader.hard_mode_words
             return Constants.HARD_MODE_BACKGROUND_PATH
 
     def update_configuration(self, chosen_mode):
@@ -80,14 +81,23 @@ class Wordle:
         self.BACKGROUND_RECT = self.BACKGROUND.get_rect(center=(318, 323))
 
     def initialize_keyboard(self):
+        indicator_position_y = Constants.FIRST_INDICATOR_POSITION_Y
         for i in range(3):
-            for letter in self.alphabet[i]:
-                new_indicator = Indicator(self.indicator_x, self.indicator_y, letter, self.SCREEN)
+            x_offset = (Constants.WIDTH - len(BASIC_INDICATORS[i]) * 60)/2
+            for letter in BASIC_INDICATORS[i]:
+                new_indicator = Indicator(x_offset, indicator_position_y, letter, self.SCREEN)
                 self.indicators.append(new_indicator)
                 new_indicator.draw()
-                self.indicator_x += 60
-            self.indicator_y += 100
-            self.indicator_x = 20
+                x_offset += 60
+            indicator_position_y += 100
+
+        x_offset = (Constants.WIDTH - len(self.file_reader.language_specific_letters) * 60)/2
+        for letter in self.file_reader.language_specific_letters:
+            new_indicator = Indicator(x_offset, indicator_position_y, letter, self.SCREEN)
+            self.indicators.append(new_indicator)
+            new_indicator.draw()
+            x_offset += 60
+
         # maybe add logic to center each indicator
 
     def draw_new_word(self):
@@ -102,7 +112,7 @@ class Wordle:
 
     def reset(self):
         self.SCREEN.fill("white")
-        self.update_configuration("MEDIUM") #just checkin if changing mode after game works (it did)
+        self.update_configuration(Mode.MEDIUM)  # just checkin if changing mode after game works (it did)
         self.SCREEN.blit(self.BACKGROUND, self.BACKGROUND_RECT)
         self.guesses_count = 0
         self.draw_new_word()

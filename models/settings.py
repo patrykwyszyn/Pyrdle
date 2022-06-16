@@ -6,5 +6,4 @@ class Settings(BaseModel):
     easy_mode_filename: str
     medium_mode_filename: str
     hard_mode_filename: str
-    alphabet: str
-
+    language_specific_letters: str

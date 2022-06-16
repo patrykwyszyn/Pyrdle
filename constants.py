@@ -1,6 +1,3 @@
-import pygame
-
-
 class Constants:
     LETTER_X_SPACING = 85
     LETTER_Y_SPACING = 12
@@ -23,3 +20,5 @@ class Constants:
     ICON_PATH = "resources/Icon.png"
 
     WINDOW_TITLE = "Wordle!"
+
+    FIRST_INDICATOR_POSITION_Y = 630

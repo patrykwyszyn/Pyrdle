@@ -2,7 +2,15 @@
   "english":
     {
       "language": "english",
-      "alphabet": "QWERTYUIOPASDFGHJKLZXCVBNM",
+      "language_specific_letters": "",
+      "easy_mode_filename": "5-letters-words.csv",
+      "medium_mode_filename": "6-letters-words.csv",
+      "hard_mode_filename": "7-letters-words.csv"
+    },
+    "polish":
+    {
+      "language": "polish",
+      "language_specific_letters": "ŻŹĆŚÓĘĄŃŁ",
       "easy_mode_filename": "5-letters-words.csv",
       "medium_mode_filename": "6-letters-words.csv",
       "hard_mode_filename": "7-letters-words.csv"

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Color:
+class Color(str, Enum):
     GREEN = "#6aaa64"
     YELLOW = "#c9b458"
     GREY = "#787c7e"
