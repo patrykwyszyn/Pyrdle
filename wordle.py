@@ -118,7 +118,7 @@ class Wordle:
         self.current_letter_bg_x -= Constants.LETTER_X_SPACING
 
     @staticmethod
-    def get_frequency_of_letters_in_guess_word(guess_to_check: List[Letter]) -> Dict[str, int]:
+    def get_frequency_of_letters_in_guessed_word(guess_to_check: List[Letter]) -> Dict[str, int]:
         letters = [x.character for x in guess_to_check]
         return collections.Counter(letters)
 
@@ -154,7 +154,7 @@ class Wordle:
 
     def check_guess(self, guess_word: List[Letter]):
         frequency_of_letters_in_correct_word = self.get_frequency_of_letters_in_correct_word()
-        frequency_of_letters_in_guess_word = self.get_frequency_of_letters_in_guess_word(guess_word)
+        frequency_of_letters_in_guessed_word = self.get_frequency_of_letters_in_guessed_word(guess_word)
         guess_letters: List[LetterInWord] = self.get_letters_with_position(guess_word)
 
         for guess_letter in guess_letters.copy():
@@ -164,7 +164,7 @@ class Wordle:
 
                 guess_letters.remove(guess_letter)
                 frequency_of_letters_in_correct_word[guess_letter.letter.character] -= 1
-                frequency_of_letters_in_guess_word[guess_letter.letter.character] -= 1
+                frequency_of_letters_in_guessed_word[guess_letter.letter.character] -= 1
 
         for guess_letter in guess_letters.copy():
             if guess_letter.letter.character.lower() in self.word and frequency_of_letters_in_correct_word[guess_letter.letter.character] > 0:
@@ -172,7 +172,7 @@ class Wordle:
                 self.game_result = GameResult.NOT_DECIDED
 
                 frequency_of_letters_in_correct_word[guess_letter.letter.character] -= 1
-                frequency_of_letters_in_guess_word[guess_letter.letter.character] -= 1
+                frequency_of_letters_in_guessed_word[guess_letter.letter.character] -= 1
                 guess_letters.remove(guess_letter)
 
         for guess_letter in guess_letters:
