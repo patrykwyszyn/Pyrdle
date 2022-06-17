@@ -2,7 +2,7 @@ from UI.ui import Ui
 from constants import Constants
 from models.color import Color
 
-ANIM_BASE_VELOCITY = 50
+ANIM_BASE_VELOCITY = 100
 
 
 class LetterBox:

@@ -21,7 +21,7 @@ from file_reader import FileReader
 SWOOSH_SFX = pygame.mixer.Sound("resources/sounds/letter_swoosh.ogg")
 AMBIENCE1_OST = "resources/sounds/ambience.ogg"
 AMBIENCE2_OST = "resources/sounds/ambience2.ogg"
-
+LETTERBOX_ANIM_FREQ = 250
 
 # Feel free to refactor this @Patryk Wyszynski. Another threaded method is inside the Wordle class.
 def anim_triggerer(trigger_time, letterbox):
@@ -220,7 +220,7 @@ class Wordle:
 
         # After all the letters have been processed, prepare their animation.
         for i in range(self.number_of_letters):
-            thread_kwargs = {'trigger_time': i * 300 + 1, 'letterbox': guess_word_copy[i]}
+            thread_kwargs = {'trigger_time': i * LETTERBOX_ANIM_FREQ + 1, 'letterbox': guess_word_copy[i]}
             t = threading.Thread(target=anim_triggerer, kwargs=thread_kwargs)
             t.start()
 
@@ -231,9 +231,9 @@ class Wordle:
 
     def play_again(self):
         frame_x = 10
-        frame_y = 620
-        frame_width = 1000
-        frame_height = 600
+        frame_y = 625
+        frame_width = Constants.WIDTH - (frame_x * 2)  # Equal margin.
+        frame_height = Constants.HEIGHT - frame_y - frame_x
 
         frame_rect = (frame_x, frame_y, frame_width, frame_height)
         Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.word.upper()}!")
