@@ -4,7 +4,8 @@ from models.color import Color
 
 ANIM_BASE_VELOCITY = 50
 
-class Letter:
+
+class LetterBox:
     def __init__(self, character, bg_position):
         # Initializes all the variables, including text, color, position, size, etc.
         self.bg_color = Color.WHITE
@@ -12,7 +13,7 @@ class Letter:
         self.bg_position = bg_position
         self.bg_x = bg_position[0]
         self.bg_y = bg_position[1]
-        self.bg_rect = (bg_position[0], self.bg_y, Constants.LETTER_SIZE, Constants.LETTER_SIZE)
+        self.bg_rect = (bg_position[0], self.bg_y, Constants.LETTERBOX_SIZE, Constants.LETTERBOX_SIZE)
         self.bg_rect_copy = self.bg_rect
         self.character = character
         self.text_position = (self.bg_x+36, self.bg_position[1]+34)

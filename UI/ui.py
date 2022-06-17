@@ -1,13 +1,12 @@
 import pygame
 from pygame.rect import Rect, RectType
 from pygame.surface import Surface, SurfaceType
-
 from UI.button import Button
 from constants import Constants
 from models.color import Color
-# Initialize pygame before loading assets.
 from models.fonts_name import FontsName
 
+# Initialize pygame before loading assets.
 pygame.init()
 
 # Images/sprites.
@@ -30,7 +29,7 @@ class Ui:
     @classmethod
     def __init__(cls, window_height, background_path):
         cls._background = pygame.image.load(background_path)
-        cls._background_rect = cls._background.get_rect(center=Constants.BG_RECT_CENTER)
+        cls._background_rect = cls._background.get_rect(center=Constants.BG_GRID_CENTER)
         cls._screen = pygame.display.set_mode((Constants.WIDTH, window_height))
         cls._screen.fill(Color.WHITE)
         cls._screen.blit(cls._background, cls._background_rect)
@@ -41,7 +40,7 @@ class Ui:
     @classmethod
     def update_background(cls, background_path):
         cls._background = pygame.image.load(background_path)
-        cls._background_rect = cls._background.get_rect(center=Constants.BG_RECT_CENTER)
+        cls._background_rect = cls._background.get_rect(center=Constants.BG_GRID_CENTER)
 
     @classmethod
     def reset_ui(cls):
@@ -72,7 +71,7 @@ class Ui:
                              letter.bg_rect_copy[1] - 2,
                              letter.bg_rect_copy[2] + 4,
                              letter.bg_rect_copy[3] + 4)
-            pygame.draw.rect(cls._screen, "#FFFFFF", bg_grid_cover)
+            pygame.draw.rect(cls._screen, Color.WHITE, bg_grid_cover)
 
         # Draw the box surface of the letter.
         pygame.draw.rect(cls._screen, letter.bg_color, letter.bg_rect)
