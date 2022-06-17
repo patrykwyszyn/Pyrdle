@@ -4,7 +4,7 @@ from UI.ui import Ui
 from constants import Constants
 from models.color import Color
 
-FLIP_VELOCITY = 100
+FLIP_VELOCITY = 600
 SHAKE_VELOCITY = 1
 SHAKE_MAX_OFFSET = 25
 SHAKE_LIMIT = 100

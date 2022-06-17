@@ -31,6 +31,7 @@ def flip_anim_triggerer(trigger_time, letterbox):
 def shake_anim_triggerer(letterbox):
     letterbox.start_shake_animation()
 
+
 class Wordle:
     configuration: Configuration
     running: bool
@@ -177,8 +178,8 @@ class Wordle:
             GameResult.LOSE: ("You lose, try again!", Color.RED)
         }
         self.is_showing_results = True
-        frame_rect: Tuple[float, float, float, float]  = (frame_x, frame_y, frame_width, frame_height)
-        Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.word.upper()}!", result_text[self.game_result])
+        frame_rect: Tuple[float, float, float, float] = (frame_x, frame_y, frame_width, frame_height)
+        Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.configuration.word.upper()}!", result_text[self.game_result])
 
     def handle_keyboard_pressed_event(self, event):
         if event.key == pygame.K_RETURN:
@@ -221,7 +222,8 @@ class Wordle:
             else:
                 self.check_guess(self.current_guess)
 
-    def shake_letters(self, letters) -> None:
+    @staticmethod
+    def shake_letters(letters) -> None:
         for letter in letters:
             t = threading.Thread(target=shake_anim_triggerer, kwargs={'letterbox': letter})
             t.start()
