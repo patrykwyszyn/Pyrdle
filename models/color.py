@@ -7,3 +7,5 @@ class Color(str, Enum):
     GREY = "#787c7e"
     OUTLINE = "#d3d6da"
     FILLED_OUTLINE = "#878a8c"
+    WHITE = "#ffffff"
+    BLACK = "#000000"

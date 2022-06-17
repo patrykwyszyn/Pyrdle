@@ -7,7 +7,7 @@ class Constants:
     HEIGHT = 900
     HEIGHT_EXT = HEIGHT + 100  # For non-english locales that use extra letters, an additional line of keys is shown.
 
-    BG_RECT_CENTER = (318, 323)
+    BG_RECT_CENTER = (318, 333)
 
     EASY_MODE_LETTERS = 5
     MEDIUM_MODE_LETTERS = 6
