@@ -98,10 +98,14 @@ class Ui:
     @classmethod
     def display_game_over_frame(cls, popup_rect, play_again_str, word_info_str):
         pygame.draw.rect(cls._screen, Color.WHITE, popup_rect)
+
+        text_center_y = popup_rect[1] + (popup_rect[3] / 2)  # Y coord of the center of the box
+        text_center_offset = 20  # Offset text by this much up or down to split strings.
+
         play_again_text = PLAY_AGAIN_FONT.render(play_again_str, True, Color.BLACK)
-        play_again_rect = play_again_text.get_rect(center=(Constants.WIDTH / 2, 700))
+        play_again_rect = play_again_text.get_rect(center=(Constants.WIDTH / 2, text_center_y - text_center_offset))
         word_info_text = PLAY_AGAIN_FONT.render(word_info_str, True, Color.BLACK)
-        word_info_rect = word_info_text.get_rect(center=(Constants.WIDTH / 2, 650))
+        word_info_rect = word_info_text.get_rect(center=(Constants.WIDTH / 2, text_center_y + text_center_offset))
         cls._screen.blit(word_info_text, word_info_rect)
         cls._screen.blit(play_again_text, play_again_rect)
         pygame.display.update()
