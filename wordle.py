@@ -17,16 +17,19 @@ from models.game_result import GameResult
 from models.letter_in_word import LetterInWord
 
 SWOOSH_SFX = pygame.mixer.Sound("resources/sounds/letter_swoosh.ogg")
-AMBIENCE1_OST = "resources/sounds/ambience.ogg"
-AMBIENCE2_OST = "resources/sounds/ambience2.ogg"
+AMBIENCE_OST = "resources/sounds/ambience.ogg"
 LETTERBOX_ANIM_FREQ = 250
 
-# Feel free to refactor this @Patryk Wyszynski. Another threaded method is inside the Wordle class.
-def anim_triggerer(trigger_time, letterbox):
-    time.sleep(trigger_time / 1000)  # time.sleep() requires seconds.
-    pygame.mixer.Sound.play(SWOOSH_SFX)
-    letterbox.start_animation()
 
+# Feel free to refactor this @Patryk Wyszynski. Another threaded method is inside the Wordle class.
+def flip_anim_triggerer(trigger_time, letterbox):
+    time.sleep(trigger_time/1000)  # time.sleep() requires seconds.
+    pygame.mixer.Sound.play(SWOOSH_SFX)
+    letterbox.start_flip_animation()
+
+
+def shake_anim_triggerer(letterbox):
+    letterbox.start_shake_animation()
 
 class Wordle:
     configuration: Configuration
@@ -156,7 +159,7 @@ class Wordle:
         # After all the letters have been processed, prepare their animation.
         for i in range(self.configuration.number_of_letters):
             thread_kwargs = {'trigger_time': i * LETTERBOX_ANIM_FREQ + 1, 'letterbox': guess_word_copy[i]}
-            t = threading.Thread(target=anim_triggerer, kwargs=thread_kwargs)
+            t = threading.Thread(target=flip_anim_triggerer, kwargs=thread_kwargs)
             t.start()
 
             # If this is the last letter, create another event which will unlock inputs.
@@ -164,16 +167,20 @@ class Wordle:
                 t = threading.Thread(target=self.input_unlocker, kwargs={'trigger_time': i * 300 + 300})
                 t.start()
 
-    def play_again(self) -> None:
+    def display_results(self):
         frame_x: float = 10
         frame_y: float = 625
         frame_width: float = Constants.WIDTH - (frame_x * 2)  # Equal margin.
         frame_height: float = Constants.HEIGHT - frame_y - frame_x
+        result_text: Dict[GameResult, Tuple[str, Color]] = {
+            GameResult.WIN: ("Congratulations, you WIN!", Color.GREEN),
+            GameResult.LOSE: ("You lose, try again!", Color.RED)
+        }
         self.is_showing_results = True
-        frame_rect: Tuple[float, float, float, float] = (frame_x, frame_y, frame_width, frame_height)
-        Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.configuration.word.upper()}!")
+        frame_rect: Tuple[float, float, float, float]  = (frame_x, frame_y, frame_width, frame_height)
+        Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.word.upper()}!", result_text[self.game_result])
 
-    def handle_keyboard_pressed_event(self, event: Event) -> None:
+    def handle_keyboard_pressed_event(self, event):
         if event.key == pygame.K_RETURN:
             self.check_word()
         elif event.key == pygame.K_BACKSPACE:
@@ -202,31 +209,31 @@ class Wordle:
                 self.insert_letter(key_pressed)
 
     def check_word(self) -> None:
-        # Command for changing ambience. To be removed.
-        cmd: str = self.current_guess_string.lower()
-        if cmd == "xxtwo":
-            pygame.mixer.music.load(AMBIENCE2_OST)
-            pygame.mixer.music.play(-1)
-            pygame.mixer.music.set_volume(0.7)
-        elif cmd == "xxone":
-            pygame.mixer.music.load(AMBIENCE1_OST)
-            pygame.mixer.music.play(-1)
-            pygame.mixer.music.set_volume(0.7)
-
         if self.game_result != GameResult.NOT_DECIDED:
             self.reset()
         else:
-            if len(self.current_guess_string) == self.configuration.number_of_letters and self.current_guess_string.lower() in self.configuration.words:
+            if len(self.current_guess_string) != self.configuration.number_of_letters:
+                Ui.display_popup("Not enough letters!", self.configuration.indicators)
+                self.shake_letters(self.current_guess)
+            elif self.current_guess_string.lower() not in self.configuration.words:
+                Ui.display_popup("Not in word list!", self.configuration.indicators)
+                self.shake_letters(self.current_guess)
+            else:
                 self.check_guess(self.current_guess)
 
-    def insert_letter(self, key_pressed: str) -> None:
+    def shake_letters(self, letters) -> None:
+        for letter in letters:
+            t = threading.Thread(target=shake_anim_triggerer, kwargs={'letterbox': letter})
+            t.start()
+
+    def insert_letter(self, key_pressed) -> None:
         if key_pressed in self.configuration.file_reader.alphabet and key_pressed != "":
             if len(self.current_guess_string) < self.configuration.number_of_letters:
                 self.create_new_letterbox(key_pressed)
 
     def check_game_complete(self) -> None:
         if self.game_result != GameResult.NOT_DECIDED:
-            self.play_again()
+            self.display_results()
 
     def handle_events(self) -> None:
         for event in pygame.event.get():
@@ -249,7 +256,7 @@ class Wordle:
         clock = pygame.time.Clock()
         fps: int = 60
         self.running = True
-        pygame.mixer.music.load(AMBIENCE2_OST)
+        pygame.mixer.music.load(AMBIENCE_OST)
         pygame.mixer.music.play(-1)
         pygame.mixer.music.set_volume(0.7)
 
