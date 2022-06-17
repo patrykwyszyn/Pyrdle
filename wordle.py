@@ -5,6 +5,7 @@ from typing import List, Dict
 
 import pygame
 
+from UI.choose_mode_button import ChooseModeButton
 from UI.indicator import Indicator
 from UI.letter import Letter
 from UI.ui import Ui
@@ -25,6 +26,7 @@ class Wordle:
     starting_offset_for_letter: int
     number_of_letters: int
     words: List[str]
+    chosen_mode: Mode
 
     def __init__(self, chosen_language="english", chosen_mode: Mode = Mode.EASY):
         self.file_reader = FileReader(chosen_language)
@@ -36,6 +38,7 @@ class Wordle:
 
         self.draw_new_word()
         self.indicators = []
+        self.choose_mode_buttons = []
         self.guesses = [[]] * 6
         self.guesses_count: int = 0
         self.game_result = GameResult.NOT_DECIDED
@@ -46,6 +49,7 @@ class Wordle:
         self.initialize_keyboard()
 
     def set_mode_configuration(self, chosen_mode: Mode):
+        self.chosen_mode = chosen_mode
         self.words = self.file_reader.get_words(chosen_mode)
         if chosen_mode == Mode.EASY:
             self.starting_offset_for_letter = Constants.EASY_MODE_OFFSET
@@ -64,6 +68,12 @@ class Wordle:
         background_path = self.set_mode_configuration(chosen_mode)
         self.current_letter_bg_x = self.starting_offset_for_letter
         Ui.update_background(background_path)
+
+    def initialize_choose_mode_buttons(self):
+        mode_colors = {Mode.EASY: Color.OUTLINE, Mode.MEDIUM: Color.OUTLINE, Mode.HARD: Color.OUTLINE, self.chosen_mode: Color.GREEN}
+        self.choose_mode_buttons.append(ChooseModeButton(Constants.WIDTH - 105, 5, Mode.EASY, mode_colors[Mode.EASY]))
+        self.choose_mode_buttons.append(ChooseModeButton(Constants.WIDTH - 215, 5, Mode.MEDIUM, mode_colors[Mode.MEDIUM]))
+        self.choose_mode_buttons.append(ChooseModeButton(Constants.WIDTH - 325, 5, Mode.HARD, mode_colors[Mode.HARD]))
 
     def initialize_keyboard(self):
         indicator_position_y = Constants.FIRST_INDICATOR_POSITION_Y
@@ -96,7 +106,6 @@ class Wordle:
         return word in self.words
 
     def reset(self):
-        self.update_configuration(Mode.MEDIUM)  # just checkin if changing mode after game works (it did)
         Ui.reset_ui()
         self.guesses_count = 0
         self.draw_new_word()
@@ -111,7 +120,7 @@ class Wordle:
 
     def create_new_letter(self, key_pressed):
         self.current_guess_string += key_pressed
-        new_letter = Letter(key_pressed, (self.current_letter_bg_x, self.guesses_count * 100 + Constants.LETTER_X_SPACING - 50))
+        new_letter = Letter(key_pressed, (self.current_letter_bg_x, self.guesses_count * 100 + Constants.LETTER_X_SPACING - 40))
         self.current_letter_bg_x += Constants.LETTER_X_SPACING
         self.guesses[self.guesses_count].append(new_letter)
         self.current_guess.append(new_letter)
@@ -145,7 +154,7 @@ class Wordle:
     def update_letter(self, letter: Letter, color: Color):
         letter.bg_color = color
         self.update_indicator(letter.character, color)
-        letter.text_color = "white"
+        letter.text_color = Color.WHITE
 
         letter.draw()
         Ui.force_display_update()
@@ -205,6 +214,7 @@ class Wordle:
 
     def play(self):
         while True:
+            self.initialize_choose_mode_buttons()
             if self.game_result != GameResult.NOT_DECIDED:
                 self.play_again()
             for event in pygame.event.get():
@@ -227,6 +237,11 @@ class Wordle:
 
     def handle_mouse_clicked_event(self, event):
         key_pressed = ""
+        for choose_mode in self.choose_mode_buttons:
+            if choose_mode.is_point_colliding(event.pos):
+                self.update_configuration(choose_mode.text)
+                self.reset()
+                return
         for indicator in self.indicators:
             if indicator.is_point_colliding(event.pos):
                 key_pressed = indicator.text

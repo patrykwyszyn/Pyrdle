@@ -1,12 +1,13 @@
 from UI.ui import Ui
 from constants import Constants
+from models.color import Color
 
 
 class Letter:
     def __init__(self, character, bg_position):
         # Initializes all the variables, including text, color, position, size, etc.
-        self.bg_color = "white"
-        self.text_color = "black"
+        self.bg_color = Color.WHITE
+        self.text_color = Color.BLACK
         self.bg_position = bg_position
         self.bg_x = bg_position[0]
         self.bg_y = bg_position[1]

@@ -1,6 +1,5 @@
+from abc import abstractmethod
 from typing import Tuple
-
-from UI.ui import Ui
 
 
 class Button:
@@ -11,10 +10,10 @@ class Button:
         self.text_offset = text_offset
         self.rect = rect
         self.bg_color = bg_color
-        self.draw()
 
+    @abstractmethod
     def draw(self):
-        Ui.draw_indicator(self)
+        pass
 
     def is_point_colliding(self, mouse_position: Tuple[int, int]):
         x, y, width, height = self.rect
