@@ -56,7 +56,7 @@ class Ui:
             FontsName.INDICATOR: INDICATOR_LETTER_FONT,
             FontsName.CHOOSE_MODE: CHOOSE_MODE_LETTER_FONT
         }
-        pygame.draw.rect(cls._screen, button.bg_color, button.rect)
+        pygame.draw.rect(cls._screen, button.bg_color, button.rect, border_radius=7)
         text_surface = fonts[font].render(button.text, True, Color.WHITE)
         text_rect = text_surface.get_rect(center=button.text_offset)
         cls._screen.blit(text_surface, text_rect)
