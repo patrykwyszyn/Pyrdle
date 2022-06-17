@@ -1,6 +1,9 @@
+from typing import Tuple
+
 import pygame
 from pygame.rect import Rect, RectType
 from pygame.surface import Surface, SurfaceType
+
 from UI.button import Button
 from constants import Constants
 from models.color import Color
@@ -21,13 +24,14 @@ CHOOSE_MODE_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 15)
 # Other constants.
 FONT_SCALE_FACTOR = 80
 
+
 class Ui:
     _screen: Surface | SurfaceType
     _background: Surface | SurfaceType
     _background_rect: Rect | RectType | None
-    
+
     @classmethod
-    def __init__(cls, window_height, background_path):
+    def __init__(cls, window_height: float, background_path: str):
         cls._background = pygame.image.load(background_path)
         cls._background_rect = cls._background.get_rect(center=Constants.BG_GRID_CENTER)
         cls._screen = pygame.display.set_mode((Constants.WIDTH, window_height))
@@ -38,21 +42,21 @@ class Ui:
         pygame.display.update()
 
     @classmethod
-    def update_background(cls, background_path):
+    def update_background(cls, background_path: str) -> None:
         cls._background = pygame.image.load(background_path)
         cls._background_rect = cls._background.get_rect(center=Constants.BG_GRID_CENTER)
 
     @classmethod
-    def reset_ui(cls):
+    def reset_ui(cls) -> None:
         cls._screen.fill(Color.WHITE)
         cls._screen.blit(cls._background, cls._background_rect)
 
     @classmethod
-    def force_display_update(cls):
+    def force_display_update(cls) -> None:
         pygame.display.update()
 
     @classmethod
-    def draw_button(cls, button: Button, font: FontsName):
+    def draw_button(cls, button: Button, font: FontsName) -> None:
         fonts = {
             FontsName.INDICATOR: INDICATOR_LETTER_FONT,
             FontsName.CHOOSE_MODE: CHOOSE_MODE_LETTER_FONT
@@ -64,7 +68,7 @@ class Ui:
         pygame.display.update()
 
     @classmethod
-    def draw_letter_on_board(cls, letter):
+    def draw_letter_on_board(cls, letter) -> None:
         # If animating, draw a rectangle with bigger margins first to cover the background grid.
         if letter.is_anim_playing:
             bg_grid_cover = (letter.bg_rect_copy[0] - 2,
@@ -79,24 +83,24 @@ class Ui:
             pygame.draw.rect(cls._screen, Color.FILLED_OUTLINE, letter.bg_rect, 3)
 
         # Draw the letter itself and scale with its containing box.
-        text_surface = GUESSED_LETTER_FONT.render(letter.character, True, letter.text_color)
-        scaled_text_surface = pygame.transform.scale(text_surface,                # Surface.
-                                                     (text_surface.get_width(),   # New scaled size (x, y).
-                                                      abs(text_surface.get_height() * (letter.bg_rect[3] / FONT_SCALE_FACTOR))))
-        text_rect = scaled_text_surface.get_rect(center=letter.text_position)
+        text_surface: Surface | SurfaceType = GUESSED_LETTER_FONT.render(letter.character, True, letter.text_color)
+        scaled_text_surface: Surface | SurfaceType = pygame.transform.scale(text_surface,  # Surface.
+                                                                            (text_surface.get_width(),  # New scaled size (x, y).
+                                                                             abs(text_surface.get_height() * (letter.bg_rect[3] / FONT_SCALE_FACTOR))))
+        text_rect: Rect | RectType | None = scaled_text_surface.get_rect(center=letter.text_position)
         cls._screen.blit(scaled_text_surface, text_rect)
 
         pygame.display.update()
 
     @classmethod
-    def delete_letter_from_board(cls, letter):
+    def delete_letterbox_from_board(cls, letterbox) -> None:
         # Fills the letter's spot with the default square, emptying it.
-        pygame.draw.rect(cls._screen, Color.WHITE, letter.bg_rect)
-        pygame.draw.rect(cls._screen, Color.OUTLINE, letter.bg_rect, 3)
+        pygame.draw.rect(cls._screen, Color.WHITE, letterbox.bg_rect)
+        pygame.draw.rect(cls._screen, Color.OUTLINE, letterbox.bg_rect, 3)
         pygame.display.update()
 
     @classmethod
-    def display_game_over_frame(cls, popup_rect, play_again_str, word_info_str):
+    def display_game_over_frame(cls, popup_rect: Tuple[float, float, float, float], play_again_str: str, word_info_str: str) -> None:
         pygame.draw.rect(cls._screen, Color.WHITE, popup_rect)
 
         text_center_y = popup_rect[1] + (popup_rect[3] / 2)  # Y coord of the center of the box
