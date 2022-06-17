@@ -3,6 +3,7 @@ import random
 import sys
 import threading
 import time
+from typing import List, Dict
 
 import pygame
 
@@ -10,13 +11,12 @@ from UI.choose_mode_button import ChooseModeButton
 from UI.indicator import Indicator
 from UI.letterbox import LetterBox
 from UI.ui import Ui
-from models.color import Color
-from models.game_result import GameResult
-from models.letter_in_word import LetterInWord
-from models.difficulty import Difficulty
-from typing import List, Dict
 from constants import Constants
 from file_reader import FileReader
+from models.color import Color
+from models.difficulty import Difficulty
+from models.game_result import GameResult
+from models.letter_in_word import LetterInWord
 
 SWOOSH_SFX = pygame.mixer.Sound("resources/sounds/letter_swoosh.ogg")
 AMBIENCE1_OST = "resources/sounds/ambience.ogg"
@@ -229,14 +229,17 @@ class Wordle:
                 t = threading.Thread(target=self.input_unlocker, kwargs={'trigger_time':i*300+300})
                 t.start()
 
-    def play_again(self):
+    def display_results(self):
         frame_x = 10
         frame_y = 625
         frame_width = Constants.WIDTH - (frame_x * 2)  # Equal margin.
         frame_height = Constants.HEIGHT - frame_y - frame_x
-
+        result_text = {
+            GameResult.WIN: ("Congratulations, you WIN!", Color.GREEN),
+            GameResult.LOSE: ("You lose, try again!", Color.RED)
+        }
         frame_rect = (frame_x, frame_y, frame_width, frame_height)
-        Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.word.upper()}!")
+        Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.word.upper()}!", result_text[self.game_result])
 
     def handle_keyboard_pressed_event(self, event):
         if event.key == pygame.K_RETURN:
@@ -288,7 +291,7 @@ class Wordle:
 
     def check_game_complete(self):
         if self.game_result != GameResult.NOT_DECIDED:
-            self.play_again()
+            self.display_results()
 
     def handle_events(self):
         for event in pygame.event.get():

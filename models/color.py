@@ -9,3 +9,4 @@ class Color(str, Enum):
     FILLED_OUTLINE = "#878a8c"
     WHITE = "#ffffff"
     BLACK = "#000000"
+    RED = "#ff0000"

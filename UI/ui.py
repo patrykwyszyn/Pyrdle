@@ -1,6 +1,9 @@
+from typing import Tuple
+
 import pygame
 from pygame.rect import Rect, RectType
 from pygame.surface import Surface, SurfaceType
+
 from UI.button import Button
 from constants import Constants
 from models.color import Color
@@ -96,16 +99,21 @@ class Ui:
         pygame.display.update()
 
     @classmethod
-    def display_game_over_frame(cls, popup_rect, play_again_str, word_info_str):
+    def display_game_over_frame(cls, popup_rect, play_again_str, word_info_str, result_info: Tuple[str, str]):
         pygame.draw.rect(cls._screen, Color.WHITE, popup_rect)
+        result_text, result_color = result_info
 
         text_center_y = popup_rect[1] + (popup_rect[3] / 2)  # Y coord of the center of the box
         text_center_offset = 20  # Offset text by this much up or down to split strings.
+
+        result_text = PLAY_AGAIN_FONT.render(result_text, True, result_color)
+        result_text_rect = result_text.get_rect(center=(Constants.WIDTH / 2, text_center_y - 4 * text_center_offset))
 
         play_again_text = PLAY_AGAIN_FONT.render(play_again_str, True, Color.BLACK)
         play_again_rect = play_again_text.get_rect(center=(Constants.WIDTH / 2, text_center_y - text_center_offset))
         word_info_text = PLAY_AGAIN_FONT.render(word_info_str, True, Color.BLACK)
         word_info_rect = word_info_text.get_rect(center=(Constants.WIDTH / 2, text_center_y + text_center_offset))
+        cls._screen.blit(result_text, result_text_rect)
         cls._screen.blit(word_info_text, word_info_rect)
         cls._screen.blit(play_again_text, play_again_rect)
         pygame.display.update()
