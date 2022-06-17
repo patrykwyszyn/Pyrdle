@@ -1,20 +1,21 @@
 import collections
 import random
 import sys
-from typing import List, Dict
 
 import pygame
 
 from UI.choose_mode_button import ChooseModeButton
 from UI.indicator import Indicator
 from UI.letter import Letter
-from UI.ui import Ui
+from typing import List, Dict
+
 from constants import Constants
 from file_reader import FileReader
 from models.color import Color
 from models.game_result import GameResult
 from models.letter_in_word import LetterInWord
 from models.mode import Mode
+from UI.ui import Ui
 
 BASIC_INDICATORS: List[str] = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
 
@@ -26,10 +27,14 @@ class Wordle:
     starting_offset_for_letter: int
     number_of_letters: int
     words: List[str]
+    running: bool  # For main game loop.
+    is_locked: bool  # Whether the inputs are locked. This happens during animations.
+    anim_events: Dict[int, Letter]  # Stores event id with its corresponding letter.
     chosen_mode: Mode
 
     def __init__(self, chosen_language="english", chosen_mode: Mode = Mode.EASY):
         self.file_reader = FileReader(chosen_language)
+        self.running = True
 
         background_path = self.set_mode_configuration(chosen_mode)
         window_height: int = Constants.HEIGHT if self.file_reader.language_specific_letters == "" else Constants.HEIGHT_EXT
@@ -42,9 +47,12 @@ class Wordle:
         self.guesses = [[]] * 6
         self.guesses_count: int = 0
         self.game_result = GameResult.NOT_DECIDED
+        self.is_locked = False
         self.current_guess = []
         self.current_guess_string = ""
         self.current_letter_bg_x = self.starting_offset_for_letter
+        self.anim_events = {}
+        self.unlock_event = 0
 
         self.initialize_keyboard()
 
@@ -152,9 +160,8 @@ class Wordle:
                 indicator.draw()
 
     def update_letter(self, letter: Letter, color: Color):
-        letter.bg_color = color
         self.update_indicator(letter.character, color)
-        letter.text_color = Color.WHITE
+        letter.schedule_params(color, Color.WHITE)
 
         letter.draw()
         Ui.force_display_update()
@@ -173,9 +180,11 @@ class Wordle:
         return guess_letters
 
     def check_guess(self, guess_word: List[Letter]):
+        self.is_locked = True
         frequency_of_letters_in_correct_word = self.get_frequency_of_letters_in_correct_word()
         frequency_of_letters_in_guessed_word = self.get_frequency_of_letters_in_guessed_word(guess_word)
         guess_letters: List[LetterInWord] = self.get_letters_with_position(guess_word)
+        guess_word_copy = guess_word.copy()
 
         for guess_letter in guess_letters.copy():
             if guess_letter.letter.character.lower() == self.word[guess_letter.index]:
@@ -203,6 +212,21 @@ class Wordle:
             self.game_result = GameResult.LOSE
         self.prepare_for_the_next_guess()
 
+        # After all the letters have been processed, prepare their animation.
+        self.anim_events = {}
+        for i in range(self.number_of_letters):
+            letter_event = pygame.event.Event(pygame.event.custom_type())
+            pygame.time.set_timer(letter_event, i * 300 + 1)  # +1 so that the timer doesn't get disabled on 0.
+            self.anim_events[letter_event.type] = guess_word_copy[i]
+
+            # If this is the last letter, create another event which will unlock inputs.
+            if i == self.number_of_letters - 1:
+                # unlock_event = pygame.event.Event(pygame.USEREVENT + i + 2)
+                unlock_event = pygame.event.Event(pygame.event.custom_type())
+                pygame.time.set_timer(unlock_event, i * 300 + 300)
+                self.unlock_event = unlock_event.type
+
+
     def play_again(self):
         frame_x = 10
         frame_y = 620
@@ -211,21 +235,6 @@ class Wordle:
 
         frame_rect = (frame_x, frame_y, frame_width, frame_height)
         Ui.display_game_over_frame(frame_rect, "Press ENTER to play again!", f"The word was {self.word.upper()}!")
-
-    def play(self):
-        while True:
-            self.initialize_choose_mode_buttons()
-            if self.game_result != GameResult.NOT_DECIDED:
-                self.play_again()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    self.handle_mouse_clicked_event(event)
-
-                if event.type == pygame.KEYDOWN:
-                    self.handle_keyboard_pressed_event(event)
 
     def handle_keyboard_pressed_event(self, event):
         if event.key == pygame.K_RETURN:
@@ -264,3 +273,45 @@ class Wordle:
             if len(self.current_guess_string) < self.number_of_letters:
                 self.create_new_letter(key_pressed)
 
+    def check_game_complete(self):
+        if self.game_result != GameResult.NOT_DECIDED:
+            self.play_again()
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+                return
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.handle_mouse_clicked_event(event)
+                return
+            if event.type == pygame.KEYDOWN and not self.is_locked:
+                self.handle_keyboard_pressed_event(event)
+                return
+            if event.type == self.unlock_event:
+                self.is_locked = False
+                return
+            if event.type in self.anim_events.keys():
+                if isinstance(self.anim_events[event.type], Letter):
+                    self.anim_events[event.type].start_animation()
+                    pygame.time.set_timer(event.type, 0)  # Disable the timer.
+
+    def update(self, delta_time):
+        for guess in self.guesses:
+            for letter in guess:
+                letter.update(delta_time)
+
+    def play(self):
+        clock = pygame.time.Clock()
+        fps = 144
+        self.running = True
+        while self.running:
+            self.initialize_choose_mode_buttons()  # Move out of here after test.
+            delta_time = clock.tick(fps) / 1000
+            self.check_game_complete()
+            self.handle_events()
+            self.update(delta_time)
+            pygame.display.update()
+
+        pygame.quit()
+        sys.exit()

@@ -19,6 +19,8 @@ INDICATOR_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 25)
 PLAY_AGAIN_FONT = pygame.font.Font("resources/FreeSansBold.otf", 40)
 CHOOSE_MODE_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 15)
 
+# Other constants.
+FONT_SCALE_FACTOR = 80
 
 class Ui:
     _screen: Surface | SurfaceType
@@ -64,15 +66,27 @@ class Ui:
 
     @classmethod
     def draw_letter_on_board(cls, letter):
-        text_surface = GUESSED_LETTER_FONT.render(letter.character, True, letter.text_color)
-        text_rect = text_surface.get_rect(center=letter.text_position)
+        # If animating, draw a rectangle with bigger margins first to cover the background grid.
+        if letter.is_anim_playing:
+            bg_grid_cover = (letter.bg_rect_copy[0] - 2,
+                             letter.bg_rect_copy[1] - 2,
+                             letter.bg_rect_copy[2] + 4,
+                             letter.bg_rect_copy[3] + 4)
+            pygame.draw.rect(cls._screen, "#FFFFFF", bg_grid_cover)
 
-        # Puts the letter and text on the screen at the desired positions.
+        # Draw the box surface of the letter.
         pygame.draw.rect(cls._screen, letter.bg_color, letter.bg_rect)
         if letter.bg_color == Color.WHITE:
             pygame.draw.rect(cls._screen, Color.FILLED_OUTLINE, letter.bg_rect, 3)
+
+        # Draw the letter itself and scale with its containing box.
         text_surface = GUESSED_LETTER_FONT.render(letter.character, True, letter.text_color)
-        cls._screen.blit(text_surface, text_rect)
+        scaled_text_surface = pygame.transform.scale(text_surface,                # Surface.
+                                                     (text_surface.get_width(),   # New scaled size (x, y).
+                                                      abs(text_surface.get_height() * (letter.bg_rect[3] / FONT_SCALE_FACTOR))))
+        text_rect = scaled_text_surface.get_rect(center=letter.text_position)
+        cls._screen.blit(scaled_text_surface, text_rect)
+
         pygame.display.update()
 
     @classmethod
