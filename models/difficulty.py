@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Mode(str, Enum):
+class Difficulty(str, Enum):
     EASY = "EASY"
     MEDIUM = "MEDIUM"
     HARD = "HARD"

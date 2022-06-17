@@ -3,7 +3,7 @@ import json
 import os
 from typing import Dict
 
-from models.mode import Mode
+from models.difficulty import Difficulty
 from models.settings import Settings
 
 
@@ -20,11 +20,11 @@ class FileReader:
         self.alphabet += self.settings.language_specific_letters
         self.language_specific_letters = self.settings.language_specific_letters
 
-    def get_words(self, chosen_mode: Mode):
+    def get_words(self, chosen_mode: Difficulty):
         paths: Dict[str, str] = {
-            Mode.EASY: self.settings.easy_mode_filename,
-            Mode.MEDIUM: self.settings.medium_mode_filename,
-            Mode.HARD: self.settings.hard_mode_filename
+            Difficulty.EASY: self.settings.easy_mode_filename,
+            Difficulty.MEDIUM: self.settings.medium_mode_filename,
+            Difficulty.HARD: self.settings.hard_mode_filename
         }
 
         return next(csv.reader(open(os.path.join(self.path, paths[chosen_mode]), encoding="utf8")))

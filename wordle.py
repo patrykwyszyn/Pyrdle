@@ -1,23 +1,33 @@
 import collections
 import random
 import sys
+import threading
+import time
 
 import pygame
 
 from UI.choose_mode_button import ChooseModeButton
 from UI.indicator import Indicator
-from UI.letter import Letter
-from typing import List, Dict
-
-from constants import Constants
-from file_reader import FileReader
+from UI.letterbox import LetterBox
+from UI.ui import Ui
 from models.color import Color
 from models.game_result import GameResult
 from models.letter_in_word import LetterInWord
-from models.mode import Mode
-from UI.ui import Ui
+from models.difficulty import Difficulty
+from typing import List, Dict
+from constants import Constants
+from file_reader import FileReader
 
-BASIC_INDICATORS: List[str] = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
+SWOOSH_SFX = pygame.mixer.Sound("resources/sounds/letter_swoosh.ogg")
+AMBIENCE1_OST = "resources/sounds/ambience.ogg"
+AMBIENCE2_OST = "resources/sounds/ambience2.ogg"
+
+
+# Feel free to refactor this @Patryk Wyszynski. Another threaded method is inside the Wordle class.
+def anim_triggerer(trigger_time, letterbox):
+    time.sleep(trigger_time/1000)  # time.sleep() requires seconds.
+    pygame.mixer.Sound.play(SWOOSH_SFX)
+    letterbox.start_animation()
 
 
 class Wordle:
@@ -27,79 +37,77 @@ class Wordle:
     starting_offset_for_letter: int
     number_of_letters: int
     words: List[str]
-    running: bool  # For main game loop.
-    is_locked: bool  # Whether the inputs are locked. This happens during animations.
-    anim_events: Dict[int, Letter]  # Stores event id with its corresponding letter.
-    chosen_mode: Mode
+    running: bool
+    chosen_difficulty: Difficulty
 
-    def __init__(self, chosen_language="english", chosen_mode: Mode = Mode.EASY):
+    def __init__(self, chosen_language="english", chosen_difficulty: Difficulty = Difficulty.EASY):
+        # Setup window, difficulty and UI.
         self.file_reader = FileReader(chosen_language)
-        self.running = True
-
-        background_path = self.set_mode_configuration(chosen_mode)
+        background_path = self.set_mode_configuration(chosen_difficulty)
         window_height: int = Constants.HEIGHT if self.file_reader.language_specific_letters == "" else Constants.HEIGHT_EXT
 
         Ui(window_height, background_path)
 
+        # Generate new word.
         self.draw_new_word()
+
+        # Initialize variables.
         self.indicators = []
-        self.choose_mode_buttons = []
+        self.choose_difficulty_buttons = []
         self.guesses = [[]] * 6
-        self.guesses_count: int = 0
+        self.guesses_count = 0
         self.game_result = GameResult.NOT_DECIDED
-        self.is_locked = False
+        self.is_locked = False  # Whether the inputs are locked. This happens during animations.
         self.current_guess = []
         self.current_guess_string = ""
         self.current_letter_bg_x = self.starting_offset_for_letter
-        self.anim_events = {}
-        self.unlock_event = 0
 
         self.initialize_keyboard()
 
-    def set_mode_configuration(self, chosen_mode: Mode):
-        self.chosen_mode = chosen_mode
-        self.words = self.file_reader.get_words(chosen_mode)
-        if chosen_mode == Mode.EASY:
-            self.starting_offset_for_letter = Constants.EASY_MODE_OFFSET
-            self.number_of_letters = Constants.EASY_MODE_LETTERS
-            return Constants.EASY_MODE_BACKGROUND_PATH
-        elif chosen_mode == Mode.MEDIUM:
-            self.starting_offset_for_letter = Constants.MEDIUM_MODE_OFFSET
-            self.number_of_letters = Constants.MEDIUM_MODE_LETTERS
-            return Constants.MEDIUM_MODE_BACKGROUND_PATH
+    def set_mode_configuration(self, chosen_difficulty: Difficulty):
+        self.chosen_difficulty = chosen_difficulty
+        self.words = self.file_reader.get_words(chosen_difficulty)
+        if chosen_difficulty == Difficulty.EASY:
+            self.starting_offset_for_letter = Constants.EASY_DIFFICULTY_OFFSET
+            self.number_of_letters = Constants.EASY_DIFFICULTY_LETTERS
+            return Constants.EASY_DIFFICULTY_BACKGROUND_PATH
+        elif chosen_difficulty == Difficulty.MEDIUM:
+            self.starting_offset_for_letter = Constants.MEDIUM_DIFFICULTY_OFFSET
+            self.number_of_letters = Constants.MEDIUM_DIFFICULTY_LETTERS
+            return Constants.MEDIUM_DIFFICULTY_BACKGROUND_PATH
         else:
-            self.starting_offset_for_letter = Constants.HARD_MODE_OFFSET
-            self.number_of_letters = Constants.HARD_MODE_LETTERS
-            return Constants.HARD_MODE_BACKGROUND_PATH
+            self.starting_offset_for_letter = Constants.HARD_DIFFICULTY_OFFSET
+            self.number_of_letters = Constants.HARD_DIFFICULTY_LETTERS
+            return Constants.HARD_DIFFICULTY_BACKGROUND_PATH
 
-    def update_configuration(self, chosen_mode):
-        background_path = self.set_mode_configuration(chosen_mode)
+    def update_configuration(self, chosen_difficulty):
+        background_path = self.set_mode_configuration(chosen_difficulty)
         self.current_letter_bg_x = self.starting_offset_for_letter
         Ui.update_background(background_path)
 
-    def initialize_choose_mode_buttons(self):
-        mode_colors = {Mode.EASY: Color.OUTLINE, Mode.MEDIUM: Color.OUTLINE, Mode.HARD: Color.OUTLINE, self.chosen_mode: Color.GREEN}
-        self.choose_mode_buttons.append(ChooseModeButton(Constants.WIDTH - 105, 5, Mode.EASY, mode_colors[Mode.EASY]))
-        self.choose_mode_buttons.append(ChooseModeButton(Constants.WIDTH - 215, 5, Mode.MEDIUM, mode_colors[Mode.MEDIUM]))
-        self.choose_mode_buttons.append(ChooseModeButton(Constants.WIDTH - 325, 5, Mode.HARD, mode_colors[Mode.HARD]))
+    def setup_difficulty_buttons(self):
+        difficulty_colors = {Difficulty.EASY: Color.OUTLINE, Difficulty.MEDIUM: Color.OUTLINE, Difficulty.HARD: Color.OUTLINE, self.chosen_difficulty: Color.GREEN}
+        self.choose_difficulty_buttons.append(ChooseModeButton(Constants.WIDTH - 105, 5, Difficulty.EASY, difficulty_colors[Difficulty.EASY]))
+        self.choose_difficulty_buttons.append(ChooseModeButton(Constants.WIDTH - 215, 5, Difficulty.MEDIUM, difficulty_colors[Difficulty.MEDIUM]))
+        self.choose_difficulty_buttons.append(ChooseModeButton(Constants.WIDTH - 325, 5, Difficulty.HARD, difficulty_colors[Difficulty.HARD]))
 
     def initialize_keyboard(self):
         indicator_position_y = Constants.FIRST_INDICATOR_POSITION_Y
         x_offset = 0
         for i in range(3):
-            x_offset = (Constants.WIDTH - len(BASIC_INDICATORS[i]) * 60)/2
+            x_offset = (Constants.WIDTH - len(Constants.BASIC_INDICATORS[i]) * 60)/2
             if i == 2:
-                enter = Indicator(x_offset - 91, indicator_position_y, "Enter", 100 - Constants.LETTER_Y_SPACING)
+                enter = Indicator(x_offset - 91, indicator_position_y, "Enter", 100 - Constants.LETTERBOX_Y_SPACING)
                 self.indicators.append(enter)
 
-            for letter in BASIC_INDICATORS[i]:
+            for letter in Constants.BASIC_INDICATORS[i]:
                 new_indicator = Indicator(x_offset, indicator_position_y, letter)
                 self.indicators.append(new_indicator)
                 x_offset += 60
             indicator_position_y += 90
 
-        enter = Indicator(x_offset, indicator_position_y-90, "BckSp", 100)
-        self.indicators.append(enter)
+        backspace = Indicator(x_offset, indicator_position_y-90, "BckSp", 100)
+        self.indicators.append(backspace)
 
         x_offset = (Constants.WIDTH - len(self.file_reader.language_specific_letters) * 60)/2
         for letter in self.file_reader.language_specific_letters:
@@ -107,17 +115,11 @@ class Wordle:
             self.indicators.append(new_indicator)
             x_offset += 60
 
-    def draw_new_word(self):
-        self.word = random.choice(self.words)
-
-    def is_valid_word(self, word: str):
-        return word in self.words
-
     def reset(self):
         Ui.reset_ui()
         self.guesses_count = 0
         self.draw_new_word()
-        self.guesses: List[List[Letter]] = [[]] * 6
+        self.guesses: List[List[LetterBox]] = [[]] * 6
         self.current_guess = []
         self.current_guess_string = ""
         self.game_result = GameResult.NOT_DECIDED
@@ -126,27 +128,31 @@ class Wordle:
             indicator.bg_color = Color.OUTLINE
             indicator.draw()
 
-    def create_new_letter(self, key_pressed):
-        self.current_guess_string += key_pressed
-        new_letter = Letter(key_pressed, (self.current_letter_bg_x, self.guesses_count * 100 + Constants.LETTER_X_SPACING - 40))
-        self.current_letter_bg_x += Constants.LETTER_X_SPACING
-        self.guesses[self.guesses_count].append(new_letter)
-        self.current_guess.append(new_letter)
-        for guess in self.guesses:
-            for letter in guess:
-                letter.draw()
+    def draw_new_word(self):
+        self.word = random.choice(self.words)
 
-    def delete_letter(self):
+    def is_valid_word(self, word: str):
+        return word in self.words
+
+    def create_new_letterbox(self, key_pressed):
+        self.current_guess_string += key_pressed
+        new_letterbox = LetterBox(key_pressed, (self.current_letter_bg_x, self.guesses_count * 100 + Constants.LETTERBOX_X_SPACING - 40))
+        self.current_letter_bg_x += Constants.LETTERBOX_X_SPACING
+        self.guesses[self.guesses_count].append(new_letterbox)
+        self.current_guess.append(new_letterbox)
+        new_letterbox.draw()
+
+    def delete_letterbox(self):
         if len(self.current_guess_string) <= 0:
             return
         self.guesses[self.guesses_count][-1].delete()
         self.guesses[self.guesses_count].pop()
         self.current_guess_string = self.current_guess_string[:-1]
         self.current_guess.pop()
-        self.current_letter_bg_x -= Constants.LETTER_X_SPACING
+        self.current_letter_bg_x -= Constants.LETTERBOX_X_SPACING
 
     @staticmethod
-    def get_frequency_of_letters_in_guessed_word(guess_to_check: List[Letter]) -> Dict[str, int]:
+    def get_frequency_of_letters_in_guessed_word(guess_to_check: List[LetterBox]) -> Dict[str, int]:
         letters = [x.character for x in guess_to_check]
         return collections.Counter(letters)
 
@@ -159,7 +165,7 @@ class Wordle:
                 indicator.bg_color = color
                 indicator.draw()
 
-    def update_letter(self, letter: Letter, color: Color):
+    def update_letter(self, letter: LetterBox, color: Color):
         self.update_indicator(letter.character, color)
         letter.schedule_params(color, Color.WHITE)
 
@@ -173,13 +179,13 @@ class Wordle:
         self.current_letter_bg_x = self.starting_offset_for_letter
 
     @staticmethod
-    def get_letters_with_position(guess_to_check: List[Letter]) -> List[LetterInWord]:
+    def get_letters_with_position(guess_to_check: List[LetterBox]) -> List[LetterInWord]:
         guess_letters: List[LetterInWord] = []
         for i in range(len(guess_to_check)):
             guess_letters.append(LetterInWord(guess_to_check[i], i))
         return guess_letters
 
-    def check_guess(self, guess_word: List[Letter]):
+    def check_guess(self, guess_word: List[LetterBox]):
         self.is_locked = True
         frequency_of_letters_in_correct_word = self.get_frequency_of_letters_in_correct_word()
         frequency_of_letters_in_guessed_word = self.get_frequency_of_letters_in_guessed_word(guess_word)
@@ -213,19 +219,15 @@ class Wordle:
         self.prepare_for_the_next_guess()
 
         # After all the letters have been processed, prepare their animation.
-        self.anim_events = {}
         for i in range(self.number_of_letters):
-            letter_event = pygame.event.Event(pygame.event.custom_type())
-            pygame.time.set_timer(letter_event, i * 300 + 1)  # +1 so that the timer doesn't get disabled on 0.
-            self.anim_events[letter_event.type] = guess_word_copy[i]
+            thread_kwargs = {'trigger_time': i * 300 + 1, 'letterbox': guess_word_copy[i]}
+            t = threading.Thread(target=anim_triggerer, kwargs=thread_kwargs)
+            t.start()
 
             # If this is the last letter, create another event which will unlock inputs.
             if i == self.number_of_letters - 1:
-                # unlock_event = pygame.event.Event(pygame.USEREVENT + i + 2)
-                unlock_event = pygame.event.Event(pygame.event.custom_type())
-                pygame.time.set_timer(unlock_event, i * 300 + 300)
-                self.unlock_event = unlock_event.type
-
+                t = threading.Thread(target=self.input_unlocker, kwargs={'trigger_time':i*300+300})
+                t.start()
 
     def play_again(self):
         frame_x = 10
@@ -240,13 +242,13 @@ class Wordle:
         if event.key == pygame.K_RETURN:
             self.check_word()
         elif event.key == pygame.K_BACKSPACE:
-            self.delete_letter()
+            self.delete_letterbox()
         else:
             self.insert_letter(event.unicode.upper())
 
     def handle_mouse_clicked_event(self, event):
         key_pressed = ""
-        for choose_mode in self.choose_mode_buttons:
+        for choose_mode in self.choose_difficulty_buttons:
             if choose_mode.is_point_colliding(event.pos):
                 self.update_configuration(choose_mode.text)
                 self.reset()
@@ -257,11 +259,22 @@ class Wordle:
         if key_pressed == "Enter":
             self.check_word()
         elif key_pressed == "BckSp":
-            self.delete_letter()
+            self.delete_letterbox()
         else:
             self.insert_letter(key_pressed)
 
     def check_word(self):
+        # Command for changing ambience. To be removed.
+        cmd = self.current_guess_string.lower()
+        if cmd == "xxtwo":
+            pygame.mixer.music.load(AMBIENCE2_OST)
+            pygame.mixer.music.play(-1)
+            pygame.mixer.music.set_volume(0.7)
+        elif cmd == "xxone":
+            pygame.mixer.music.load(AMBIENCE1_OST)
+            pygame.mixer.music.play(-1)
+            pygame.mixer.music.set_volume(0.7)
+
         if self.game_result != GameResult.NOT_DECIDED:
             self.reset()
         else:
@@ -271,7 +284,7 @@ class Wordle:
     def insert_letter(self, key_pressed):
         if key_pressed in self.file_reader.alphabet and key_pressed != "":
             if len(self.current_guess_string) < self.number_of_letters:
-                self.create_new_letter(key_pressed)
+                self.create_new_letterbox(key_pressed)
 
     def check_game_complete(self):
         if self.game_result != GameResult.NOT_DECIDED:
@@ -288,13 +301,6 @@ class Wordle:
             if event.type == pygame.KEYDOWN and not self.is_locked:
                 self.handle_keyboard_pressed_event(event)
                 return
-            if event.type == self.unlock_event:
-                self.is_locked = False
-                return
-            if event.type in self.anim_events.keys():
-                if isinstance(self.anim_events[event.type], Letter):
-                    self.anim_events[event.type].start_animation()
-                    pygame.time.set_timer(event.type, 0)  # Disable the timer.
 
     def update(self, delta_time):
         for guess in self.guesses:
@@ -303,10 +309,14 @@ class Wordle:
 
     def play(self):
         clock = pygame.time.Clock()
-        fps = 144
+        fps = 60
         self.running = True
+        pygame.mixer.music.load(AMBIENCE2_OST)
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.7)
+
         while self.running:
-            self.initialize_choose_mode_buttons()  # Move out of here after test.
+            self.setup_difficulty_buttons()  # Move out of here after test.
             delta_time = clock.tick(fps) / 1000
             self.check_game_complete()
             self.handle_events()
@@ -315,3 +325,8 @@ class Wordle:
 
         pygame.quit()
         sys.exit()
+
+    # Move this somewhere higher @Patryk Wyszynski.
+    def input_unlocker(self, trigger_time):
+        time.sleep(trigger_time / 1000)
+        self.is_locked = False
