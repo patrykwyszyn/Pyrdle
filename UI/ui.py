@@ -1,5 +1,8 @@
 from typing import Tuple
 
+import threading
+import time
+
 import pygame
 from pygame.rect import Rect, RectType
 from pygame.surface import Surface, SurfaceType
@@ -20,6 +23,7 @@ GUESSED_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 50)
 INDICATOR_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 25)
 PLAY_AGAIN_FONT = pygame.font.Font("resources/FreeSansBold.otf", 40)
 CHOOSE_MODE_LETTER_FONT = pygame.font.Font("resources/FreeSansBold.otf", 15)
+MESSAGE_BOX_FONT = pygame.font.Font("resources/FreeSansBold.otf", 18)
 
 # Other constants.
 FONT_SCALE_FACTOR = 80
@@ -28,7 +32,7 @@ class Ui:
     _screen: Surface | SurfaceType
     _background: Surface | SurfaceType
     _background_rect: Rect | RectType | None
-    
+
     @classmethod
     def __init__(cls, window_height, background_path):
         cls._background = pygame.image.load(background_path)
@@ -69,7 +73,7 @@ class Ui:
     @classmethod
     def draw_letter_on_board(cls, letter):
         # If animating, draw a rectangle with bigger margins first to cover the background grid.
-        if letter.is_anim_playing:
+        if letter.is_flip_playing:
             bg_grid_cover = (letter.bg_rect_copy[0] - 2,
                              letter.bg_rect_copy[1] - 2,
                              letter.bg_rect_copy[2] + 4,
@@ -99,11 +103,10 @@ class Ui:
         pygame.display.update()
 
     @classmethod
-    def display_game_over_frame(cls, popup_rect, play_again_str, word_info_str, result_info: Tuple[str, str]):
-        pygame.draw.rect(cls._screen, Color.WHITE, popup_rect)
+    def display_game_over_frame(cls, frame_rect, play_again_str, word_info_str, result_info: Tuple[str, str]):
+        pygame.draw.rect(cls._screen, Color.WHITE, frame_rect)
         result_text, result_color = result_info
-
-        text_center_y = popup_rect[1] + (popup_rect[3] / 2)  # Y coord of the center of the box
+        text_center_y = frame_rect[1] + (frame_rect[3] / 2)  # Y coord of the center of the box
         text_center_offset = 20  # Offset text by this much up or down to split strings.
 
         result_text = PLAY_AGAIN_FONT.render(result_text, True, result_color)
@@ -117,3 +120,34 @@ class Ui:
         cls._screen.blit(word_info_text, word_info_rect)
         cls._screen.blit(play_again_text, play_again_rect)
         pygame.display.update()
+
+    @classmethod
+    def display_popup(cls, message, indicators):
+        width = len(message) * 10 + 20
+        height = 50
+        x = Constants.WIDTH / 2 - (width / 2) - 8
+        y = Constants.HEIGHT - 170
+
+        # Draw box
+        popup_rect = (x, y, width, height)
+        pygame.draw.rect(cls._screen, Color.BLACK, popup_rect, border_radius=10)
+
+        # Draw text
+        message_text = MESSAGE_BOX_FONT.render(message, True, Color.WHITE)
+        message_rect = message_text.get_rect(center=(x + (width / 2), y + (height / 2)))
+        cls._screen.blit(message_text, message_rect)
+
+        pygame.display.update()
+
+        # Disappear after n seconds
+        t = threading.Thread(target=cls._hide_popup, kwargs={'hide_time': 1.0, 'indicators': indicators})
+        t.start()
+
+    @classmethod
+    def _hide_popup(cls, hide_time, indicators):
+        time.sleep(hide_time)
+
+        pygame.draw.rect(cls._screen, Color.WHITE, (30, 700, 500, 100))
+        pygame.display.update()
+        for indicator in indicators:
+            indicator.draw()
