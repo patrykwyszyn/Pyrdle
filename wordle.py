@@ -1,18 +1,19 @@
 import collections
 import random
 import sys
+from typing import List, Dict
+
 import pygame
 
-from typing import List, Dict
+from UI.indicator import Indicator
+from UI.letter import Letter
+from UI.ui import Ui
 from constants import Constants
-from models.game_result import GameResult
-from models.indicator import Indicator
-from models.letter import Letter
-from models.color import Color
 from file_reader import FileReader
+from models.color import Color
+from models.game_result import GameResult
 from models.letter_in_word import LetterInWord
 from models.mode import Mode
-from UI.ui import Ui
 
 BASIC_INDICATORS: List[str] = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
 
@@ -66,13 +67,21 @@ class Wordle:
 
     def initialize_keyboard(self):
         indicator_position_y = Constants.FIRST_INDICATOR_POSITION_Y
+        x_offset = 0
         for i in range(3):
             x_offset = (Constants.WIDTH - len(BASIC_INDICATORS[i]) * 60)/2
+            if i == 2:
+                enter = Indicator(x_offset - 91, indicator_position_y, "Enter", 100 - Constants.LETTER_Y_SPACING)
+                self.indicators.append(enter)
+
             for letter in BASIC_INDICATORS[i]:
                 new_indicator = Indicator(x_offset, indicator_position_y, letter)
                 self.indicators.append(new_indicator)
                 x_offset += 60
-            indicator_position_y += 100
+            indicator_position_y += 90
+
+        enter = Indicator(x_offset, indicator_position_y-90, "BckSp", 100)
+        self.indicators.append(enter)
 
         x_offset = (Constants.WIDTH - len(self.file_reader.language_specific_letters) * 60)/2
         for letter in self.file_reader.language_specific_letters:
@@ -111,6 +120,8 @@ class Wordle:
                 letter.draw()
 
     def delete_letter(self):
+        if len(self.current_guess_string) <= 0:
+            return
         self.guesses[self.guesses_count][-1].delete()
         self.guesses[self.guesses_count].pop()
         self.current_guess_string = self.current_guess_string[:-1]
@@ -200,21 +211,41 @@ class Wordle:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
-                        if self.game_result != GameResult.NOT_DECIDED:
-                            self.reset()
-                        else:
-                            if len(self.current_guess_string) == self.number_of_letters and self.current_guess_string.lower() in self.words:
-                                self.check_guess(self.current_guess)
-                    elif event.key == pygame.K_BACKSPACE:
-                        if len(self.current_guess_string) > 0:
-                            self.delete_letter()
-                    else:
-                        key_pressed = event.unicode.upper()
-                        if key_pressed in self.file_reader.alphabet and key_pressed != "":
-                            if len(self.current_guess_string) < self.number_of_letters:
-                                self.create_new_letter(key_pressed)
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    self.handle_mouse_clicked_event(event)
 
-    # add button to change mode
-    # https://pythonprogramming.altervista.org/buttons-in-pygame/?doing_wp_cron=1655241290.0790948867797851562500
+                if event.type == pygame.KEYDOWN:
+                    self.handle_keyboard_pressed_event(event)
+
+    def handle_keyboard_pressed_event(self, event):
+        if event.key == pygame.K_RETURN:
+            self.check_word()
+        elif event.key == pygame.K_BACKSPACE:
+            self.delete_letter()
+        else:
+            self.insert_letter(event.unicode.upper())
+
+    def handle_mouse_clicked_event(self, event):
+        key_pressed = ""
+        for indicator in self.indicators:
+            if indicator.is_point_colliding(event.pos):
+                key_pressed = indicator.text
+        if key_pressed == "Enter":
+            self.check_word()
+        elif key_pressed == "BckSp":
+            self.delete_letter()
+        else:
+            self.insert_letter(key_pressed)
+
+    def check_word(self):
+        if self.game_result != GameResult.NOT_DECIDED:
+            self.reset()
+        else:
+            if len(self.current_guess_string) == self.number_of_letters and self.current_guess_string.lower() in self.words:
+                self.check_guess(self.current_guess)
+
+    def insert_letter(self, key_pressed):
+        if key_pressed in self.file_reader.alphabet and key_pressed != "":
+            if len(self.current_guess_string) < self.number_of_letters:
+                self.create_new_letter(key_pressed)
+

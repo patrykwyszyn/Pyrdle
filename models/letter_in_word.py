@@ -1,4 +1,4 @@
-from models.letter import Letter
+from UI.letter import Letter
 
 
 class LetterInWord:
