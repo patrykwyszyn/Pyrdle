@@ -1,3 +1,3 @@
 # Wordle
-to install necessary component
+to install necessary components
 pip install -r .\requirements.txt
