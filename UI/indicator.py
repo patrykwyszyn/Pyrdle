@@ -2,6 +2,7 @@ from typing import Tuple
 
 from UI.button import Button
 from UI.ui import Ui
+from models.Theme import Theme
 from models.color import Color
 from models.fonts_name import FontsName
 
@@ -23,10 +24,14 @@ class Indicator(Button):
     :param x: width of the indicator box
     :type x: float
     """
-    def __init__(self, x: float, y: float, letter: str, width: float = INDICATOR_WIDTH):
+    def __init__(self, x: float, y: float, letter: str, theme: Theme, width: float = INDICATOR_WIDTH):
         text_offset: Tuple[float, float] = (x - len(letter) * 0.5 + width/2, y + TEXT_Y_OFFSET)
         rect: Tuple[float, float, float, float] = (x, y, width, INDICATOR_HEIGHT)
-        super().__init__(x, y, letter, text_offset, rect, Color.OUTLINE)
+        super().__init__(x, y, letter, text_offset, rect, Color.OUTLINE if theme == Theme.LIGHT else Color.OUTLINE_DARK)
+        self.draw()
+
+    def reset(self, theme):
+        self.bg_color = Color.OUTLINE if theme == Theme.LIGHT else Color.OUTLINE_DARK
         self.draw()
 
     def draw(self) -> None:

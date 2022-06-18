@@ -28,6 +28,11 @@ class Constants:
     EASY_DIFFICULTY_BACKGROUND_PATH: str = "resources/easy_mode.png"
     MEDIUM_DIFFICULTY_BACKGROUND_PATH: str = "resources/medium_mode.png"
     HARD_DIFFICULTY_BACKGROUND_PATH: str = "resources/hard_mode.png"
+
+    EASY_DIFFICULTY_DARK_BACKGROUND_PATH: str = "resources/easy_mode_dark.png"
+    MEDIUM_DIFFICULTY_DARK_BACKGROUND_PATH: str = "resources/medium_mode_dark.png"
+    HARD_DIFFICULTY_DARK_BACKGROUND_PATH: str = "resources/hard_mode_dark.png"
+
     ICON_PATH: str = "resources/Icon.png"
 
     WINDOW_TITLE: str = "Pyrdle!"
