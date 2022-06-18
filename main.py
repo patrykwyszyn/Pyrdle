@@ -1,4 +1,4 @@
-from wordle import Wordle
+from pyrdle import Pyrdle
 
-wordle = Wordle()
-wordle.play()
+pyrdle = Pyrdle()
+pyrdle.play()
