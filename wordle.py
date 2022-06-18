@@ -24,7 +24,7 @@ LETTERBOX_ANIM_FREQ = 250
 
 class Wordle:
     """
-    Main class responsible for handling everything it's happening
+    Central point of the game, which handles game logic and runs the main loop
 
     :param chosen_language: language in which words will be displayed
     :type chosen_language: str

@@ -14,9 +14,9 @@ class Configuration:
     """
     Class responsible for setting necessary components which will be displayed on screen
 
-    :param chosen_language: language in which words will be displayed
+    :param chosen_language: specifies the word base, from which the words will be drawn
     :type chosen_language: str
-    :param chosen_difficulty: difficulty as a number of letter in words
+    :param chosen_difficulty: difficulty as in a number of letters in words
     :type chosen_difficulty: Difficulty(str, Enum)
     """
     file_reader: FileReader
