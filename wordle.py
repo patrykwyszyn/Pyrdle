@@ -261,7 +261,7 @@ class Wordle:
         pygame.mixer.music.set_volume(0.7)
 
         while self.running:
-            self.configuration.setup_difficulty_buttons()  # Move out of here after test.
+            self.configuration.setup_difficulty_buttons()
             delta_time: float = clock.tick(fps) / 1000
             self.check_game_complete()
             self.handle_events()
