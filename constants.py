@@ -30,6 +30,6 @@ class Constants:
     HARD_DIFFICULTY_BACKGROUND_PATH: str = "resources/hard_mode.png"
     ICON_PATH: str = "resources/Icon.png"
 
-    WINDOW_TITLE: str = "Wordle!"
+    WINDOW_TITLE: str = "Pyrdle!"
 
     FIRST_INDICATOR_POSITION_Y: int = 630

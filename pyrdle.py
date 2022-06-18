@@ -22,7 +22,7 @@ AMBIENCE_OST = "resources/sounds/ambience.ogg"
 LETTERBOX_ANIM_FREQ = 250
 
 
-class Wordle:
+class Pyrdle:
     """
     Central point of the game, which handles game logic and runs the main loop
 
