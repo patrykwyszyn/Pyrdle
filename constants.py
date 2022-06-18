@@ -2,6 +2,9 @@ from typing import List, Tuple
 
 
 class Constants:
+    """
+    Class responsible for saving constants that are used in multiple places
+    """
     BASIC_INDICATORS: List[str] = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
 
     LETTERBOX_X_SPACING: int = 85

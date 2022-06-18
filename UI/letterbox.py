@@ -11,6 +11,14 @@ SHAKE_LIMIT = 100
 
 
 class LetterBox:
+    """
+    Class responsible for displaying result of the guess made by user
+
+    :param character: character which will be displayed
+    :type character: str
+    :param bg_position: box position in the window
+    :type bg_position: Tuple[str, str]
+    """
     def __init__(self, character: str, bg_position: Tuple[float, float]):
         # Initializes all the variables, including text, color, position, size, etc.
         self.bg_color: str = Color.WHITE

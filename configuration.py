@@ -11,6 +11,14 @@ from models.difficulty import Difficulty
 
 
 class Configuration:
+    """
+    Class responsible for setting necessary components which will be displayed on screen
+
+    :param chosen_language: specifies the word base, from which the words will be drawn
+    :type chosen_language: str
+    :param chosen_difficulty: difficulty as in a number of letters in words
+    :type chosen_difficulty: Difficulty(str, Enum)
+    """
     file_reader: FileReader
     words: List[str]
     word: str
@@ -22,8 +30,8 @@ class Configuration:
         self.file_reader = FileReader(chosen_language)
         self.chosen_difficulty: Difficulty = chosen_difficulty
         background_path: str = self.set_mode_configuration(chosen_difficulty)
-        window_height: int = Constants.HEIGHT if self.file_reader.language_specific_letters == "" else Constants.HEIGHT_EXT
-        Ui(window_height, background_path)
+        self.window_height: int = Constants.HEIGHT if self.file_reader.language_specific_letters == "" else Constants.HEIGHT_EXT
+        Ui(self.window_height, background_path)
 
         self.indicators: List[Indicator] = []
         self.choose_difficulty_buttons: List[ChooseModeButton] = []

@@ -3,6 +3,20 @@ from typing import Tuple
 
 
 class Button:
+    """
+    Base class for every button class used in project
+
+    :param x: width of the rectangle which will serve as button
+    :type x: float
+    :param y: height of the rectangle which will serve as button
+    :type y: float
+    :param text_offset: position of the button in the displayed window
+    :type text_offset: Tuple[float, float]
+    :param rect: settings needed for pygame.rect
+    :type rect: Tuple[float, float, float, float]
+    :param bg_color: background color of the button
+    :type bg_color: str
+    """
     def __init__(self, x: float, y: float, text: str, text_offset: Tuple[float, float], rect: Tuple[float, float, float, float], bg_color: str):
         self.x: float = x
         self.y: float = y

@@ -1,7 +1,6 @@
-from typing import Tuple
-
 import threading
 import time
+from typing import Tuple
 
 import pygame
 from pygame.rect import Rect, RectType
@@ -30,6 +29,14 @@ FONT_SCALE_FACTOR = 80
 
 
 class Ui:
+    """
+    Class responsible for every UI based action
+
+    :param window_height: height of the windows on the screen, will may different between languages
+    :type window_height: float
+    :param background_path: difficulty as a number of letter in words
+    :type background_path: str
+    """
     _screen: Surface | SurfaceType
     _background: Surface | SurfaceType
     _background_rect: Rect | RectType | None
