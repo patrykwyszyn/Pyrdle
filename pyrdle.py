@@ -100,7 +100,7 @@ class Pyrdle:
 
     def update_indicator(self, letter: str, color: Color) -> None:
         for indicator in self.configuration.indicators:
-            if indicator.text == letter and indicator.bg_color == Color.OUTLINE:
+            if indicator.text == letter and (indicator.bg_color == Color.OUTLINE or indicator.bg_color == Color.OUTLINE_DARK):
                 indicator.bg_color = color
                 indicator.draw()
 
