@@ -11,6 +11,7 @@ from UI.letterbox import LetterBox
 from UI.ui import Ui
 from configuration import Configuration
 from constants import Constants
+from models.Theme import Theme
 from models.color import Color
 from models.difficulty import Difficulty
 from models.game_result import GameResult
@@ -32,6 +33,7 @@ class Wordle:
     :type chosen_difficulty: Difficulty(str, Enum)
     """
     configuration: Configuration
+    theme: Theme
     running: bool
     guesses: List[List[LetterBox]]
     current_guess: List[LetterBox]
@@ -40,8 +42,9 @@ class Wordle:
     game_result: GameResult
     is_showing_results: bool
 
-    def __init__(self, chosen_language: str = "english", chosen_difficulty: Difficulty = Difficulty.EASY):
-        self.configuration = Configuration(chosen_language, chosen_difficulty)
+    def __init__(self, chosen_language: str = "english", chosen_difficulty: Difficulty = Difficulty.EASY, theme: Theme = Theme.DARK):
+        self.configuration = Configuration(chosen_language, chosen_difficulty, theme)
+        self.theme = theme
 
         self.is_locked: bool = False  # Whether the inputs are locked. This happens during animations.
         self.set_default_game_statistic()
@@ -52,8 +55,7 @@ class Wordle:
         self.set_default_game_statistic()
         Ui.force_display_update()
         for indicator in self.configuration.indicators:
-            indicator.bg_color = Color.OUTLINE
-            indicator.draw()
+            indicator.reset(self.theme)
 
     def set_default_game_statistic(self) -> None:
         # Generate new word.
@@ -71,7 +73,7 @@ class Wordle:
 
     def create_new_letterbox(self, key_pressed: str) -> None:
         self.current_guess_string += key_pressed
-        new_letterbox = LetterBox(key_pressed, (self.configuration.current_letter_bg_x, self.guesses_count * 100 + Constants.LETTERBOX_X_SPACING - 40))
+        new_letterbox = LetterBox(key_pressed, (self.configuration.current_letter_bg_x, self.guesses_count * 100 + Constants.LETTERBOX_X_SPACING - 40), self.theme)
         self.configuration.current_letter_bg_x += Constants.LETTERBOX_X_SPACING
         if not self.guesses_count + 1 == len(self.guesses):
             self.guesses.append([])
@@ -148,7 +150,7 @@ class Wordle:
                 guess_letters.remove(guess_letter)
 
         for guess_letter in guess_letters:
-            self.update_letter(guess_letter.letter, Color.GREY)
+            self.update_letter(guess_letter.letter, Color.GREY if self.theme == Theme.LIGHT else Color.LETTERBOX_DARK_FILL)
             self.game_result = GameResult.NOT_DECIDED
 
         if self.guesses_count == 5 and self.game_result == GameResult.NOT_DECIDED:

@@ -2,9 +2,10 @@ from typing import Tuple
 
 from UI.ui import Ui
 from constants import Constants
+from models.Theme import Theme
 from models.color import Color
 
-FLIP_VELOCITY = 600
+FLIP_VELOCITY = 280
 SHAKE_VELOCITY = 1
 SHAKE_MAX_OFFSET = 25
 SHAKE_LIMIT = 100
@@ -19,10 +20,10 @@ class LetterBox:
     :param bg_position: box position in the window
     :type bg_position: Tuple[str, str]
     """
-    def __init__(self, character: str, bg_position: Tuple[float, float]):
+    def __init__(self, character: str, bg_position: Tuple[float, float], theme: Theme):
         # Initializes all the variables, including text, color, position, size, etc.
-        self.bg_color: str = Color.WHITE
-        self.text_color: str = Color.BLACK
+        self.bg_color: str = Color.WHITE if theme == Theme.LIGHT else Color.BLACK_BG
+        self.text_color: str = Color.BLACK if theme == Theme.LIGHT else Color.WHITE
         self.bg_x: float = bg_position[0]
         self.bg_y: float = bg_position[1]
         self.bg_rect: Tuple[float, float, float, float] = (self.bg_x, self.bg_y, Constants.LETTERBOX_SIZE, Constants.LETTERBOX_SIZE)
@@ -41,7 +42,7 @@ class LetterBox:
         self.target_y: float = self.bg_rect[1] + (self.bg_rect[3] / 2)  # Target Y is the middle of the rectangle, so Y + (height/2)
 
     def draw(self) -> None:
-        Ui.draw_letter_on_board(self)
+        Ui.draw_letterbox_on_board(self)
 
     def schedule_params(self, new_bg_color: str, new_text_color: str) -> None:
         self.bg_color_scheduled = new_bg_color
