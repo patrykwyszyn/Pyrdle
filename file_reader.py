@@ -8,6 +8,12 @@ from models.settings import Settings
 
 
 class FileReader:
+    """
+    Class responsible for reading config from file and with this, reading word files.
+
+    :param language: language as key from config, from which data will be taken
+    :type language: str
+    """
     alphabet: str = "QWERTYUIOPASDFGHJKLZXCVBNM"
     language_specific_letters: str
 

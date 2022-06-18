@@ -15,24 +15,22 @@ from models.color import Color
 from models.difficulty import Difficulty
 from models.game_result import GameResult
 from models.letter_in_word import LetterInWord
+from utils.anim_triggerers import flip_anim_triggerer, shake_anim_triggerer
 
 SWOOSH_SFX = pygame.mixer.Sound("resources/sounds/letter_swoosh.ogg")
 AMBIENCE_OST = "resources/sounds/ambience.ogg"
 LETTERBOX_ANIM_FREQ = 250
 
 
-# Feel free to refactor this @Patryk Wyszynski. Another threaded method is inside the Wordle class.
-def flip_anim_triggerer(trigger_time, letterbox):
-    time.sleep(trigger_time/1000)  # time.sleep() requires seconds.
-    pygame.mixer.Sound.play(SWOOSH_SFX)
-    letterbox.start_flip_animation()
-
-
-def shake_anim_triggerer(letterbox):
-    letterbox.start_shake_animation()
-
-
 class Wordle:
+    """
+    Main class responsible for handling everything it's happening
+
+    :param chosen_language: language in which words will be displayed
+    :type chosen_language: str
+    :param chosen_difficulty: difficulty as a number of letter in words
+    :type chosen_difficulty: Difficulty(str, Enum)
+    """
     configuration: Configuration
     running: bool
     guesses: List[List[LetterBox]]
@@ -172,7 +170,7 @@ class Wordle:
         frame_x: float = 10
         frame_y: float = 625
         frame_width: float = Constants.WIDTH - (frame_x * 2)  # Equal margin.
-        frame_height: float = Constants.HEIGHT - frame_y - frame_x
+        frame_height: float = self.configuration.window_height - frame_y - frame_x
         result_text: Dict[GameResult, Tuple[str, Color]] = {
             GameResult.WIN: ("Congratulations, you WIN!", Color.GREEN),
             GameResult.LOSE: ("You lose, try again!", Color.RED)
@@ -273,7 +271,6 @@ class Wordle:
         pygame.quit()
         sys.exit()
 
-    # Move this somewhere higher @Patryk Wyszynski.
     def input_unlocker(self, trigger_time):
         time.sleep(trigger_time / 1000)
         self.is_locked = False
